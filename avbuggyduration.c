@@ -59,7 +59,7 @@ int main(int argc, char **argv)
     AVFormatContext *ifmt_ctx = NULL, *ofmt_ctx = NULL;
     AVPacket pkt, packet_for_buggy[4];
     const char *in_filename = NULL, *out_filename = NULL, *buggy_duration = NULL, *buggy_method = NULL;
-    int ret, i, video_stream_id, audio_stream_id;
+    int ret, i, opt, video_stream_id, audio_stream_id;
     uint32_t buggy_method_flags = 0x00;
 
 
@@ -92,7 +92,8 @@ int main(int argc, char **argv)
         }
     }
 
-    (in_filename && out_filename && buggy_duration && buggy_method) || display_usage_and_exit(argv, 1);
+    if ((intptr_t)in_filename & (intptr_t)out_filename & (intptr_t)buggy_duration & (intptr_t)buggy_method == 0) 
+        display_usage_and_exit(argv, 1);
 
     if (strcmp(buggy_method, "video") == 0)
         buggy_method_flags = 0x01;
