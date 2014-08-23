@@ -27,7 +27,8 @@
  * Remux streams from one container format to another.
  * @example remuxing.c
  */
-
+#include <stdlib.h>
+#include <unistd.h>
 #include <libavutil/timestamp.h>
 #include <libavformat/avformat.h>
 
@@ -43,24 +44,66 @@ static void log_packet(const AVFormatContext *fmt_ctx, const AVPacket *pkt, cons
            pkt->stream_index);
 }
 
+void display_usage_and_exit(char** argv, int exit_status) {
+    printf("usage: %s -i input -o output -d duration_in_second -m method\n"
+            "Give media files buggy duration.\n"
+            "The output format must be the same to input format.\n"
+            "Methods: audio, video, both, speed"
+            "\n", argv[0]);
+    exit(exit_status);
+}
+
 int main(int argc, char **argv)
 {
     AVOutputFormat *ofmt = NULL;
     AVFormatContext *ifmt_ctx = NULL, *ofmt_ctx = NULL;
-    AVPacket pkt;
-    const char *in_filename, *out_filename;
-    int ret, i;
+    AVPacket pkt, packet_for_buggy[4];
+    const char *in_filename = NULL, *out_filename = NULL, *buggy_duration = NULL, *buggy_method = NULL;
+    int ret, i, video_stream_id, audio_stream_id;
+    uint32_t buggy_method_flags = 0x00;
 
-    if (argc < 3) {
-        printf("usage: %s input output\n"
-               "API example program to remux a media file with libavformat and libavcodec.\n"
-               "The output format is guessed according to the file extension.\n"
-               "\n", argv[0]);
-        return 1;
+
+    while (opt = getopt(argc, argv, "i:o:d:m:") != -1) {
+        switch (opt) {
+            case 'i':
+                in_filename = optarg;
+                break;
+                
+            case 'o':
+                out_filename = optarg;
+                break;
+                
+            case 'd':
+                buggy_duration = optarg;
+                break;
+                
+            case 'm':
+                buggy_method = optarg;
+                break;
+                
+            case 'h':   /* fall-through is intentional */
+            case '?':
+                display_usage_and_exit(argv, 0);
+                break;
+                
+            default:
+                /* You won't actually get here. */
+                break;
+        }
     }
 
-    in_filename  = argv[1];
-    out_filename = argv[2];
+    (in_filename && out_filename && buggy_duration && buggy_method) || display_usage_and_exit(argv, 1);
+
+    if (strcmp(buggy_method, "video") == 0)
+        buggy_method_flags = 0x01;
+    if (strcmp(buggy_method, "audio") == 0)
+        buggy_method_flags = 0x02;
+    if (strcmp(buggy_method, "both") == 0)
+        buggy_method_flags = 0x03;
+    if (strcmp(buggy_method, "speed") == 0)
+        buggy_method_flags = 0xF0;
+
+    if (buggy_method_flags == 0x00) display_usage_and_exit(argv, 1);
 
     av_register_all();
 
@@ -87,6 +130,8 @@ int main(int argc, char **argv)
 
     for (i = 0; i < ifmt_ctx->nb_streams; i++) {
         AVStream *in_stream = ifmt_ctx->streams[i];
+        if (in_stream->codec->codec_type == AVMEDIA_TYPE_VIDEO) video_stream_id = i;
+        if (in_stream->codec->codec_type == AVMEDIA_TYPE_AUDIO) audio_stream_id = i;
         AVStream *out_stream = avformat_new_stream(ofmt_ctx, in_stream->codec->codec);
         if (!out_stream) {
             fprintf(stderr, "Failed allocating output stream\n");
