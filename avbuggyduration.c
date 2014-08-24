@@ -29,6 +29,7 @@
  */
 #include <stdlib.h>
 #include <unistd.h>
+#include <malloc.h>
 #include <libavutil/timestamp.h>
 #include <libavformat/avformat.h>
 
@@ -58,53 +59,57 @@ int main(int argc, char **argv)
     AVOutputFormat *ofmt = NULL;
     AVFormatContext *ifmt_ctx = NULL, *ofmt_ctx = NULL;
     AVPacket pkt, packet_for_buggy[4];
-    const char *in_filename = NULL, *out_filename = NULL, *buggy_duration = NULL, *buggy_method = NULL;
-    int ret, i, opt, video_stream_id, audio_stream_id;
-    uint32_t buggy_method_flags = 0x00;
+    const char *in_filename = NULL, *out_filename = NULL;
+    int ret, i, opt, video_stream_id, audio_stream_id, buggy_duration;
+    uint32_t buggy_method_flags = 0x00, opts_flags = 0x00;
 
-
-    while (opt = getopt(argc, argv, "i:o:d:m:") != -1) {
+    opt = getopt(argc, argv, "i:o:d:m:");
+    while (opt != -1) {
         switch (opt) {
             case 'i':
-                in_filename = optarg;
+                in_filename = malloc(strlen(optarg)+1);
+                strcpy(in_filename, optarg);
+                opts_flags |= 0x01;
                 break;
                 
             case 'o':
-                out_filename = optarg;
+                out_filename = malloc(strlen(optarg)+1);
+                strcpy(out_filename, optarg);
+                opts_flags |= 0x02;
                 break;
                 
             case 'd':
-                buggy_duration = optarg;
+                sscanf(optarg, "%d", &buggy_duration);
+                opts_flags |= 0x04;
                 break;
                 
             case 'm':
-                buggy_method = optarg;
+                if (strcmp(optarg, "video") == 0)
+                    buggy_method_flags = 0x01;
+                if (strcmp(optarg, "audio") == 0)
+                    buggy_method_flags = 0x02;
+                if (strcmp(optarg, "both") == 0)
+                    buggy_method_flags = 0x03;
+                if (strcmp(optarg, "speed") == 0)
+                    buggy_method_flags = 0xF0;
+                if (buggy_method_flags == 0x00)
+                    display_usage_and_exit(argv, 1);
+                opts_flags |= 0x08;
                 break;
                 
-            case 'h':   /* fall-through is intentional */
+            case 'h':
             case '?':
                 display_usage_and_exit(argv, 0);
                 break;
                 
             default:
-                /* You won't actually get here. */
                 break;
         }
+        opt = getopt(argc, argv, "i:o:d:m:");
     }
 
-    if ((intptr_t)in_filename & (intptr_t)out_filename & (intptr_t)buggy_duration & (intptr_t)buggy_method == 0) 
+    if (opts_flags != 0x0F) 
         display_usage_and_exit(argv, 1);
-
-    if (strcmp(buggy_method, "video") == 0)
-        buggy_method_flags = 0x01;
-    if (strcmp(buggy_method, "audio") == 0)
-        buggy_method_flags = 0x02;
-    if (strcmp(buggy_method, "both") == 0)
-        buggy_method_flags = 0x03;
-    if (strcmp(buggy_method, "speed") == 0)
-        buggy_method_flags = 0xF0;
-
-    if (buggy_method_flags == 0x00) display_usage_and_exit(argv, 1);
 
     av_register_all();
 
