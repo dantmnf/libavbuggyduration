@@ -9,8 +9,6 @@ Mainly in 3 ways:
 2.  Repeat first audio frame in specified time
 3.  Multiply all timestamps and make the last timestamp to specified time (aka. ~~红色有角三~~倍速)
 
-There is nothing now. Please check it months later.
-
 Docs
 ------
 
