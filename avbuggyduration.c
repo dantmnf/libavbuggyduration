@@ -37,7 +37,7 @@ static void log_packet(const AVFormatContext *fmt_ctx, const AVPacket *pkt, cons
 {
     AVRational *time_base = &fmt_ctx->streams[pkt->stream_index]->time_base;
 
-    printf("%s: pts:%s pts_time:%s dts:%s dts_time:%s duration:%s duration_time:%s stream_index:%d\n",
+    printf("\r\e[k %s: pts:%s pts_time:%s dts:%s dts_time:%s duration:%s duration_time:%s stream_index:%d",
            tag,
            av_ts2str(pkt->pts), av_ts2timestr(pkt->pts, time_base),
            av_ts2str(pkt->dts), av_ts2timestr(pkt->dts, time_base),
@@ -62,7 +62,7 @@ int main(int argc, char **argv)
     const char *in_filename = NULL, *out_filename = NULL;
     int ret, i, opt, video_stream_id, audio_stream_id, buggy_duration, buggy_video_packet_count = 0, buggy_audio_packet_count = 0;
     uint32_t buggy_method_flags = 0x00, opts_flags = 0x00;
-    double speed_factor = 0.0;
+    double speed_factor = 1.0;
 
     opt = getopt(argc, argv, "i:o:d:m:");
     while (opt != -1) {
@@ -111,6 +111,12 @@ int main(int argc, char **argv)
 
     if (opts_flags != 0x0F) 
         display_usage_and_exit(argv, 1);
+
+    printf("buggy method flags: 0x%02X\n"
+           "buggy_duration:     %d"
+           "\n",
+           buggy_method_flags, buggy_duration);
+
 
     av_register_all();
 
@@ -192,7 +198,7 @@ int main(int argc, char **argv)
             pkt.dts = (uint64_t)((double)pkt.dts * speed_factor);
         }
 
-        log_packet(ofmt_ctx, &pkt, "out");
+        //log_packet(ofmt_ctx, &pkt, "out");
 
         ret = av_interleaved_write_frame(ofmt_ctx, &pkt);
         if (ret < 0) {
@@ -213,7 +219,8 @@ int main(int argc, char **argv)
         
     }
 
-    if (buggy_method_flags & 0xF1 == 0x02) { // Buggy audio duration
+    if (buggy_method_flags & 0xF2 == 0x02) { // Buggy audio duration
+        printf("\nbugging audio duration...\n");
         uint64_t offset = 0; //millsecond (1/1000)
         AVStream *stream = ofmt_ctx->streams[audio_stream_id];
         uint64_t dts_base = av_add_stable(stream->time_base, apacket_for_buggy[0].dts, av_make_q(1, 1000), buggy_duration * 1000);
@@ -222,6 +229,7 @@ int main(int argc, char **argv)
             apacket_for_buggy[i].dts = dts_base + offset;
             apacket_for_buggy[i].pts = pts_base + offset;
             offset += 16;
+            log_packet(ofmt_ctx, &apacket_for_buggy[i], "out");
             if (av_interleaved_write_frame(ofmt_ctx, &apacket_for_buggy[i]) < 0) {
                 fprintf(stderr, "Error muxing packet\n");
                 break;
@@ -232,6 +240,7 @@ int main(int argc, char **argv)
     }
 
     if (buggy_method_flags & 0xF1 == 0x01) { // Buggy video duration
+        printf("\nbugging video duration...\n");
         uint64_t offset = 0; //millsecond (1/1000)
         AVStream *stream = ofmt_ctx->streams[video_stream_id];
         uint64_t dts_base = av_add_stable(stream->time_base, vpacket_for_buggy[0].dts, av_make_q(1, 1000), buggy_duration * 1000);
@@ -240,6 +249,7 @@ int main(int argc, char **argv)
             vpacket_for_buggy[i].dts = dts_base + offset;
             vpacket_for_buggy[i].pts = pts_base + offset;
             offset += 16;
+            log_packet(ofmt_ctx, &vpacket_for_buggy[i], "out");
             if (av_interleaved_write_frame(ofmt_ctx, &vpacket_for_buggy[i]) < 0) {
                 fprintf(stderr, "Error muxing packet\n");
                 break;
