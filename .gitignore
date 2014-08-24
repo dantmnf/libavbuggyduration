@@ -21,3 +21,9 @@
 *.i*86
 *.x86_64
 *.hex
+
+# Files for testing
+*.mp4
+*.mov
+*.flv
+*.mkv
