@@ -212,5 +212,8 @@ end:
         return 1;
     }
 
+    free(in_filename);
+    free(out_filename);
+    
     return 0;
 }
