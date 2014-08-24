@@ -58,10 +58,11 @@ int main(int argc, char **argv)
 {
     AVOutputFormat *ofmt = NULL;
     AVFormatContext *ifmt_ctx = NULL, *ofmt_ctx = NULL;
-    AVPacket pkt, packet_for_buggy[4];
+    AVPacket pkt, vpacket_for_buggy[4], apacket_for_buggy[4];
     const char *in_filename = NULL, *out_filename = NULL;
-    int ret, i, opt, video_stream_id, audio_stream_id, buggy_duration;
+    int ret, i, opt, video_stream_id, audio_stream_id, buggy_duration, buggy_video_packet_count = 0, buggy_audio_packet_count = 0;
     uint32_t buggy_method_flags = 0x00, opts_flags = 0x00;
+    double speed_factor = 0.0;
 
     opt = getopt(argc, argv, "i:o:d:m:");
     while (opt != -1) {
@@ -180,13 +181,17 @@ int main(int argc, char **argv)
         in_stream  = ifmt_ctx->streams[pkt.stream_index];
         out_stream = ofmt_ctx->streams[pkt.stream_index];
 
-        log_packet(ifmt_ctx, &pkt, "in");
-
         /* copy packet */
         pkt.pts = av_rescale_q_rnd(pkt.pts, in_stream->time_base, out_stream->time_base, AV_ROUND_NEAR_INF|AV_ROUND_PASS_MINMAX);
         pkt.dts = av_rescale_q_rnd(pkt.dts, in_stream->time_base, out_stream->time_base, AV_ROUND_NEAR_INF|AV_ROUND_PASS_MINMAX);
         pkt.duration = av_rescale_q(pkt.duration, in_stream->time_base, out_stream->time_base);
         pkt.pos = -1;
+
+        if (buggy_method_flags & 0xF0 == 0xF0) {
+            pkt.pts = (uint64_t)((double)pkt.pts * speed_factor);
+            pkt.dts = (uint64_t)((double)pkt.dts * speed_factor);
+        }
+
         log_packet(ofmt_ctx, &pkt, "out");
 
         ret = av_interleaved_write_frame(ofmt_ctx, &pkt);
@@ -194,7 +199,52 @@ int main(int argc, char **argv)
             fprintf(stderr, "Error muxing packet\n");
             break;
         }
-        av_free_packet(&pkt);
+
+        if (pkt.stream_index == video_stream_id && buggy_video_packet_count < 3) {
+            vpacket_for_buggy[buggy_video_packet_count] = pkt;
+            buggy_video_packet_count++;
+        } else if (pkt.stream_index == audio_stream_id && buggy_audio_packet_count < 1) {
+            apacket_for_buggy[buggy_audio_packet_count] = pkt;
+            buggy_audio_packet_count++;
+        } else {
+            av_free_packet(&pkt);
+        }
+
+        
+    }
+
+    if (buggy_method_flags & 0xF1 == 0x02) { // Buggy audio duration
+        uint64_t offset = 0; //millsecond (1/1000)
+        uint64_t dts_base = av_add_stable(out_stream->time_base, apacket_for_buggy[0].dts, av_make_q(1, 1000), buggy_duration * 1000);
+        uint64_t pts_base = av_add_stable(out_stream->time_base, apacket_for_buggy[0].pts, av_make_q(1, 1000), buggy_duration * 1000);
+        for (i = 0; i < 1; i++) {
+            apacket_for_buggy[i].dts = dts_base + offset
+            apacket_for_buggy[i].pts = pts_base + offset
+            offset += 16;
+            if (av_interleaved_write_frame(ofmt_ctx, &apacket_for_buggy[i]) < 0) {
+                fprintf(stderr, "Error muxing packet\n");
+                break;
+            }
+            av_free_packet(&apacket_for_buggy[i]);
+        }
+
+    }
+
+    if (buggy_method_flags & 0xF1 == 0x01) { // Buggy video duration
+        uint64_t offset = 0; //millsecond (1/1000)
+        uint64_t dts_base = av_add_stable(out_stream->time_base, vpacket_for_buggy[0].dts, av_make_q(1, 1000), buggy_duration * 1000);
+        uint64_t pts_base = av_add_stable(out_stream->time_base, vpacket_for_buggy[0].pts, av_make_q(1, 1000), buggy_duration * 1000);
+        for (i = 0; i < 3; i++) {
+            vpacket_for_buggy[i].dts = dts_base + offset
+            vpacket_for_buggy[i].pts = pts_base + offset
+            offset += 16;
+            if (av_interleaved_write_frame(ofmt_ctx, &vpacket_for_buggy[i]) < 0) {
+                fprintf(stderr, "Error muxing packet\n");
+                break;
+            }
+            av_free_packet(&vpacket_for_buggy[i]);
+        }
+
     }
 
     av_write_trailer(ofmt_ctx);
@@ -214,6 +264,6 @@ end:
 
     free(in_filename);
     free(out_filename);
-    
+
     return 0;
 }
