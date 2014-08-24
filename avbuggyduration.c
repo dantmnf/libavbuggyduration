@@ -215,11 +215,12 @@ int main(int argc, char **argv)
 
     if (buggy_method_flags & 0xF1 == 0x02) { // Buggy audio duration
         uint64_t offset = 0; //millsecond (1/1000)
-        uint64_t dts_base = av_add_stable(out_stream->time_base, apacket_for_buggy[0].dts, av_make_q(1, 1000), buggy_duration * 1000);
-        uint64_t pts_base = av_add_stable(out_stream->time_base, apacket_for_buggy[0].pts, av_make_q(1, 1000), buggy_duration * 1000);
+        AVStream *stream = ofmt_ctx->streams[audio_stream_id];
+        uint64_t dts_base = av_add_stable(stream->time_base, apacket_for_buggy[0].dts, av_make_q(1, 1000), buggy_duration * 1000);
+        uint64_t pts_base = av_add_stable(stream->time_base, apacket_for_buggy[0].pts, av_make_q(1, 1000), buggy_duration * 1000);
         for (i = 0; i < 1; i++) {
-            apacket_for_buggy[i].dts = dts_base + offset
-            apacket_for_buggy[i].pts = pts_base + offset
+            apacket_for_buggy[i].dts = dts_base + offset;
+            apacket_for_buggy[i].pts = pts_base + offset;
             offset += 16;
             if (av_interleaved_write_frame(ofmt_ctx, &apacket_for_buggy[i]) < 0) {
                 fprintf(stderr, "Error muxing packet\n");
@@ -232,11 +233,12 @@ int main(int argc, char **argv)
 
     if (buggy_method_flags & 0xF1 == 0x01) { // Buggy video duration
         uint64_t offset = 0; //millsecond (1/1000)
-        uint64_t dts_base = av_add_stable(out_stream->time_base, vpacket_for_buggy[0].dts, av_make_q(1, 1000), buggy_duration * 1000);
-        uint64_t pts_base = av_add_stable(out_stream->time_base, vpacket_for_buggy[0].pts, av_make_q(1, 1000), buggy_duration * 1000);
+        AVStream *stream = ofmt_ctx->streams[video_stream_id];
+        uint64_t dts_base = av_add_stable(stream->time_base, vpacket_for_buggy[0].dts, av_make_q(1, 1000), buggy_duration * 1000);
+        uint64_t pts_base = av_add_stable(stream->time_base, vpacket_for_buggy[0].pts, av_make_q(1, 1000), buggy_duration * 1000);
         for (i = 0; i < 3; i++) {
-            vpacket_for_buggy[i].dts = dts_base + offset
-            vpacket_for_buggy[i].pts = pts_base + offset
+            vpacket_for_buggy[i].dts = dts_base + offset;
+            vpacket_for_buggy[i].pts = pts_base + offset;
             offset += 16;
             if (av_interleaved_write_frame(ofmt_ctx, &vpacket_for_buggy[i]) < 0) {
                 fprintf(stderr, "Error muxing packet\n");
