@@ -37,7 +37,7 @@ static void log_packet(const AVFormatContext *fmt_ctx, const AVPacket *pkt, cons
 {
     AVRational *time_base = &fmt_ctx->streams[pkt->stream_index]->time_base;
 
-    printf("%s: pts@%s,:%ss  dts@%s,%ss +%s,%ss #%d\n",
+    printf("%s: pts@%s(%ss)  dts@%s(%ss) +%s(%ss) Stream #%d\n",
            tag,
            av_ts2str(pkt->pts), av_ts2timestr(pkt->pts, time_base),
            av_ts2str(pkt->dts), av_ts2timestr(pkt->dts, time_base),
@@ -62,7 +62,7 @@ int main(int argc, char **argv)
     const char *in_filename = NULL, *out_filename = NULL;
     int ret, i, opt, video_stream_id, audio_stream_id, buggy_duration, buggy_video_packet_count = 0, buggy_audio_packet_count = 0;
     int buggy_video_required = 0, buggy_audio_required = 0, buggy_speed_required = 0;
-    uint32_t buggy_method_flags = 0x00, opts_flags = 0x00;
+    uint32_t opts_flags = 0x00;
     double speed_factor = 1.0;
 
     opt = getopt(argc, argv, "i:o:d:m:");
@@ -174,6 +174,13 @@ int main(int argc, char **argv)
         goto end;
     }
 
+
+    //calcluate speed factor
+    if(buggy_speed_required) {
+        speed_factor = (double)(buggy_duration * AV_TIME_BASE) / (double)ifmt_ctx->duration;
+    }
+
+
     while (1) {
         AVStream *in_stream, *out_stream;
 
@@ -282,8 +289,8 @@ end:
         return 1;
     }
 
-    free(in_filename);
-    free(out_filename);
+    free((void*)in_filename);
+    free((void*)out_filename);
 
     return 0;
 }
