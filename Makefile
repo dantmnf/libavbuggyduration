@@ -1,3 +1,3 @@
-CFLAGS+=`pkg-config --libs --cflags libavcodec libavformat libavutil`
+CFLAGS+=`-lavcodec -lavformat -lavutil`
 
 avbuggyduration: avbuggyduration.c
