@@ -4,7 +4,7 @@ FFMPEG_REPOSITORY="git://source.ffmpeg.org/ffmpeg.git"
 FFMPEG_CONFIGURE_OPTIONS="--enable-gpl --enable-version3 --enable-shared --enable-static --enable-small --disable-yasm --disable-hwaccels \
                           --disable-swresample --disable-swscale --disable-bsfs --disable-protocols --enable-protocol=http,file,data,pipe \
                           --disable-filters --disable-avfilter --disable-devices --disable-avdevice --disable-encoders --disable-decoders \
-                          --disable-decoders=h263,h264,hevc,vc1 --disable-postproc \
+                          --disable-decoder=h263,h264,hevc,vc1 --disable-postproc \
                           --disable-zlib --disable-bzlib --disable-xlib --disable-iconv --disable-pthreads --disable-ffmpeg --disable-ffplay \
                           --enable-ffprobe --disable-ffserver --extra-cflags=-static"
 pushd $PWD
