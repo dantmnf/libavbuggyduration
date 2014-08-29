@@ -21,3 +21,12 @@ Docs
 Methods avaliable: `video`(1), `audio`(2), `both`(1 and 2), `speed`(3)
 
 For different video and audio duration, run the program twice : )
+
+For Windows users: you had better redirect output to deivce `NUL`, like this:
+
+    Microsoft Windows [Version 6.3.9600]
+    (c) 2013 Microsoft Corporation. All rights reserved.
+     
+    C:\Users\dant>avbuggyduration -i test_input.mp4 -o test_output.mp4 -m audio -d 1024 > NUL
+
+Because Windows Command Prompt is extremely slow (compared to virtual terminals on Linux / OS X, mintty.exe, andeven Linux tty)
