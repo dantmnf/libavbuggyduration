@@ -19,16 +19,15 @@ if [ -d ffmpeg ]
 then
   cd ffmpeg
   git pull
-  cd ..
 else
   git clone "$FFMPEG_REPOSITORY" ffmpeg
+  cd ffmpeg
 fi
 
 echo 'configuring FFmpeg...'
-ffmpeg/configure --prefix="$PWD/prefix" $FFMPEG_CONFIGURE_OPTIONS || exit $!
+./configure --prefix="$PWD/prefix" $FFMPEG_CONFIGURE_OPTIONS || exit $!
 
 echo 'building FFmpeg...'
-cd ffmpeg
 make || error $!
 make install || error $!
 cd ..
