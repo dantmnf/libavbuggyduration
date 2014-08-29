@@ -29,7 +29,6 @@
  */
 #include <stdlib.h>
 #include <unistd.h>
-#include <malloc.h>
 #include <libavutil/timestamp.h>
 #include <libavformat/avformat.h>
 
