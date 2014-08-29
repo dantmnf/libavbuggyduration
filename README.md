@@ -19,4 +19,5 @@ Docs
 ### Usage
 `avbuggyduration -i input_file -d target_duration -m method -o output_file`
 Methods avaliable: `video`(1), `audio`(2), `both`(1 and 2), `speed`(3)
+
 For different video and audio duration, run the program twice : )
