@@ -1,7 +1,7 @@
 #!/bin/bash
 
 FFMPEG_REPOSITORY="git://source.ffmpeg.org/ffmpeg.git"
-FFMPEG_CONFIGURE_OPTIONS="--enable-gpl --enable-version3 --enable-shared --enable-static --enable-small --disable-hwaccels \
+FFMPEG_CONFIGURE_OPTIONS="--enable-gpl --enable-version3 --enable-shared --enable-static --enable-small --disable-yasm --disable-hwaccels \
                           --disable-swresample --disable-swscale --disable-bsfs --disable-protocols --enable-protocol=http,file,data,pipe \
                           --disable-filters --disable-avfilter --disable-devices --disable-avdevice --disable-encoders --disable-decoders \
                           --disable-demuxers --disable-muxers --enable-demuxer=adts,asf,avi,flv,mp4,matroska,flac,mpegts,mpeg,ogg,wav \
@@ -37,7 +37,5 @@ cd .. # to bootstrap
 
 echo 'building avbuggyduration...'
 cd ..
-rm ffmpeg.a
-ar -rcT ffmpeg.a ${PWD}/bootstrap/lib/*.a
-gcc -I${PWD}/bootstrap/include -lm -oavbuggyduration avbuggyduration.c ffmpeg.a || exit $!
+gcc -I${PWD}/bootstrap/include -lm -oavbuggyduration avbuggyduration.c bootstrap/lib/lib{avutil,avcodec,avformat}.a || exit $!
 echo 'done.'
