@@ -1,10 +1,13 @@
 #!/bin/bash
 
 FFMPEG_REPOSITORY="git://source.ffmpeg.org/ffmpeg.git"
-FFMPEG_CONFIGURE_OPTIONS="--enable-gpl --enable-version3 --disable-hwaccels --disable-decoders --disable-encoders \
-                          --enable-encoder=flac,alac,mjpeg,png --disable-decoder=h263,hevc,vc1 \
-                          --enable-decoder=h264,mpeg2video,aac,mp3,mp2,vorbis,opus,flac,alac \
-                          --disable-filters --disable-devices --enable-shared --enable-ffmpeg --enable-ffprobe"
+FFMPEG_CONFIGURE_OPTIONS="--enable-gpl --enable-version3 --enable-shared --enable-static --enable-small --disable-hwaccels \
+                          --disable-swresample --disable-swscale --disable-bsfs --disable-protocols --enable-protocol=http,file,data,pipe \
+                          --disable-filters --disable-avfilter --disable-devices --disable-avdevice --disable-encoders --disable-decoders \
+                          --disable-demuxers --disable-muxers --enable-demuxer=adts,asf,avi,flv,mp4,matroska,flac,mpegts,mpeg,ogg,wav \
+                          --enable-muxer=adts,asf,avi,flv,mp4,matroska,flac,mpegts,mpeg,ogg,wav --disable-parsers --disable-postproc \
+                          --disable-zlib --disable-bzlib --disable-xlib --disable-iconv --disable-pthreads --disable-ffmpeg --disable-ffplay \
+                          --enable-ffprobe --disable-ffserver --extra-cflags=-static"
 pushd $PWD
 error() {
   popd
@@ -25,17 +28,16 @@ else
 fi
 
 echo 'configuring FFmpeg...'
-./configure --prefix="$PWD/prefix" $FFMPEG_CONFIGURE_OPTIONS || exit $!
+LDFLAGS="-lm" ./configure --prefix="$PWD/.." $FFMPEG_CONFIGURE_OPTIONS || exit $!
 
 echo 'building FFmpeg...'
-make || error $!
-make install || error $!
-cd ..
+make || exit $!
+make install || exit $!
+cd .. # to bootstrap
 
 echo 'building avbuggyduration...'
 cd ..
-export CFLAGS="$CFLAGS -I${PWD}/bootstrap/prefix/include"
-export LDFLAGS="$LDFLAGS -L${PWD}/bootstrap/prefix/lib"
-make || error $!
-
+rm ffmpeg.a
+ar -rcT ffmpeg.a ${PWD}/bootstrap/lib/*.a
+gcc -I${PWD}/bootstrap/include -lm -oavbuggyduration avbuggyduration.c ffmpeg.a || exit $!
 echo 'done.'

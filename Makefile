@@ -1,3 +1,2 @@
-CFLAGS+=`-lavcodec -lavformat -lavutil`
-
 avbuggyduration: avbuggyduration.c
+	gcc -lavcodec -lavformat -lavutil -oavbuggyduration avbuggyduration.c
