@@ -14,7 +14,7 @@ Docs
 
 ### Get Started
 * For GNU/Linux, if you are lucky enough, install FFmpeg and its development files, then `make`
-* Otherwise, run `bootstrap.sh`, which will build a specially configured FFmpeg first, and build a semi-static binary
+* Otherwise, run `bootstrap.sh`, which will build a specially configured FFmpeg first, and build a static binary
 
 ### Usage
 `avbuggyduration -i input_file -d target_duration -m method -o output_file`
