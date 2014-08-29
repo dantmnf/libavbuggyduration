@@ -36,5 +36,5 @@ cd .. # to bootstrap
 
 echo 'building avbuggyduration...'
 cd ..
-gcc -I${PWD}/bootstrap/include -lm -oavbuggyduration avbuggyduration.c bootstrap/lib/lib{avutil,avcodec,avformat}.a || exit $!
+gcc -static -I${PWD}/bootstrap/include -lm -oavbuggyduration avbuggyduration.c bootstrap/lib/lib{avutil,avcodec,avformat}.a || exit $!
 echo 'done.'
